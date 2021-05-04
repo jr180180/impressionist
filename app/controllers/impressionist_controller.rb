@@ -141,7 +141,6 @@ module ImpressionistController
     end
 
     def session_hash
-
       # # careful: request.session_options[:id] encoding in rspec test was ASCII-8BIT
       # # that broke the database query for uniqueness. not sure if this is a testing only issue.
       # str = request.session_options[:id]
@@ -154,12 +153,7 @@ module ImpressionistController
         id = request.session_options[:id]
       end
 
-      unless id.is_a? String
-        id = id.cookie_value if Rack::Session::SessionId.const_defined?(:ID_VERSION) && Rack::Session::SessionId::ID_VERSION == 2
-      end
-
-      # id = cookies.session.id
-      # rack 2.0.8 releases new version of session id, id.to_s will raise error!
+      id = id.cookie_value if id.respond_to?(:cookie_value)
       id
     end
 
