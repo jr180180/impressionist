@@ -60,6 +60,9 @@ module ImpressionistController
         filter = ActiveSupport::ParameterFilter.new(Rails.application.config.filter_parameters)
       end
 
+      filtered_params = filter.filter(params_hash)
+      params_keys_for_values_to_remove.each { |key| nullify_nested_hash_value(filtered_params, key) }
+
       query_params.reverse_merge!(
         :controller_name => controller_name,
         :action_name => action_name,
@@ -68,7 +71,7 @@ module ImpressionistController
         :session_hash => session_hash,
         :ip_address => request.remote_ip,
         :referrer => request.referer,
-        :params => filter.filter(params_hash)
+        :params => filtered_params
         )
     end
 
@@ -166,6 +169,25 @@ module ImpressionistController
       user_id = @current_user ? @current_user.id : nil rescue nil
       user_id = current_user ? current_user.id : nil rescue nil if user_id.blank?
       user_id
+    end
+
+    # Finds if the defined key exists and sets it to `nil` if it does.
+    # @param [Hash] obj
+    # @param [String] key
+    def nullify_nested_hash_value(obj, key)
+      if obj.respond_to?(:key?) && obj.key?(key)
+        obj[key] = nil
+      elsif obj.respond_to?(:each)
+        r = nil
+        obj.find { |*a| r = nullify_nested_hash_value(a.last, key) }
+        r
+      end
+    end
+
+    # Override this method to include params you'd like to filter out
+    # @return [Array]
+    def params_keys_for_values_to_remove
+      []
     end
   end
 end
